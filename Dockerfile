@@ -18,7 +18,7 @@ SHELL ["/bin/bash", "-exo", "pipefail", "-c"]
 
 RUN apt-get update ;\
 	DEBIAN_FRONTEND=noninteractive apt-get install --no-install-{recommends,suggests} -y \
-		bash-completion bison build-essential ccache cmake debhelper default-libmysqlclient-dev dh-systemd flex g++ libboost-dev libboost-program-options-dev libboost-regex-dev libboost-system-dev libboost-test-dev libboost-thread-dev libedit-dev libpq-dev libssl-dev libsystemd-dev libyajl-dev po-debconf ;\
+		bash-completion bison build-essential ccache cmake debhelper default-libmysqlclient-dev dh-systemd flex g++ git libboost-dev libboost-program-options-dev libboost-regex-dev libboost-system-dev libboost-test-dev libboost-thread-dev libedit-dev libpq-dev libssl-dev libsystemd-dev libyajl-dev po-debconf ;\
 	apt-get clean ;\
 	rm -vrf /var/lib/apt/lists/*
 
@@ -27,6 +27,7 @@ RUN update-ccache-symlinks
 COPY --from=git /deb-icinga2/stretch/debian /icinga2-debian
 
 CMD cd /icinga2 ;\
+	perl -pi -e 'if (/^icinga2\b/ && !defined $changedVersion) { $now = `date '+%Y.%m.%d.%H.%M'`; $gitCommit = `git log -1 --format=%h`; chomp $now; chomp $gitCommit; s/\)/sprintf(".%s.%s)", $now, $gitCommit)/e; $changedVersion = 1 }' /icinga2-debian/changelog ;\
 	ln -vs /icinga2-debian debian ;\
 	PATH="/usr/lib/ccache:$PATH" CCACHE_DIR=/icinga2/.ccache-debian9 dpkg-buildpackage -b -uc -us ;\
 	rm debian ;\
